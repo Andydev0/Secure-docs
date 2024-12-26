@@ -1,49 +1,54 @@
-const { PrismaClient } = require('@prisma/client');
-const { hash } = require('bcrypt');
+import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcrypt';
 
-const prisma = new PrismaClient();
+const prismadb = new PrismaClient();
 
 async function main() {
-  // Criar usuário admin
-  const adminPassword = await hash('admin123', 10);
-  
-  const admin = await prisma.user.upsert({
-    where: { email: 'admin@example.com' },
-    update: {},
-    create: {
-      email: 'admin@example.com',
-      name: 'Administrador',
-      password: adminPassword,
-      role: 'ADMIN',
-    },
-  });
+  try {
+    // Criar usuário admin
+    const hashedPassword = await bcrypt.hash('admin123', 10);
 
-  console.log({ admin });
+    const admin = await prismadb.user.upsert({
+      where: { email: 'admin@admin.com' },
+      update: {},
+      create: {
+        email: 'admin@admin.com',
+        name: 'Admin',
+        password: hashedPassword,
+        role: 'ADMIN',
+      },
+    });
 
-  // Criar alguns posts iniciais
-  const post1 = await prisma.post.create({
-    data: {
-      title: 'Documento de Exemplo 1',
-      content: 'Este é um documento de exemplo criado automaticamente.',
-      published: true,
-      author: {
-        connect: { id: admin.id }
-      }
-    },
-  });
+    console.log('Admin user created:', admin);
 
-  const post2 = await prisma.post.create({
-    data: {
-      title: 'Documento de Exemplo 2',
-      content: 'Este é outro documento de exemplo criado automaticamente.',
-      published: true,
-      author: {
-        connect: { id: admin.id }
-      }
-    },
-  });
+    // Criar alguns posts iniciais
+    const post1 = await prismadb.post.create({
+      data: {
+        title: 'Documento de Exemplo 1',
+        content: 'Este é um documento de exemplo criado automaticamente.',
+        published: true,
+        author: {
+          connect: { id: admin.id }
+        }
+      },
+    });
 
-  console.log({ post1, post2 });
+    const post2 = await prismadb.post.create({
+      data: {
+        title: 'Documento de Exemplo 2',
+        content: 'Este é outro documento de exemplo criado automaticamente.',
+        published: true,
+        author: {
+          connect: { id: admin.id }
+        }
+      },
+    });
+
+    console.log({ post1, post2 });
+  } catch (error) {
+    console.error('Error seeding database:', error);
+    throw error;
+  }
 }
 
 main()
@@ -52,5 +57,5 @@ main()
     process.exit(1);
   })
   .finally(async () => {
-    await prisma.$disconnect();
+    await prismadb.$disconnect();
   });
