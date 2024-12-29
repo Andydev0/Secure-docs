@@ -5,16 +5,19 @@ import Layout from '../../components/Layout';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-const getLogTypeDisplay = (type: string) => {
-  const types = {
-    LOGIN: 'Login',
-    LOGOUT: 'Logout',
-    VIEW_POST: 'Visualizou documento',
-    CREATE_POST: 'Criou documento',
-    UPDATE_POST: 'Atualizou documento',
-    DELETE_POST: 'Excluiu documento',
-  };
-  return types[type] || type;
+type LogType = 'LOGIN' | 'LOGOUT' | 'VIEW_POST' | 'CREATE_POST' | 'UPDATE_POST' | 'DELETE_POST';
+
+const logTypes: Record<LogType, string> = {
+  LOGIN: 'Login',
+  LOGOUT: 'Logout',
+  VIEW_POST: 'Visualizou documento',
+  CREATE_POST: 'Criou documento',
+  UPDATE_POST: 'Atualizou documento',
+  DELETE_POST: 'Excluiu documento',
+};
+
+const getLogTypeDisplay = (type: string): string => {
+  return type in logTypes ? logTypes[type as LogType] : type;
 };
 
 export const getServerSideProps: GetServerSideProps = async ({ req, res }) => {
@@ -58,7 +61,26 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res }) => {
   };
 };
 
-const LogsPage = ({ logs }) => {
+interface Log {
+  id: string;
+  type: string;
+  createdAt: string;
+  user: {
+    name: string | null;
+    email: string;
+  };
+  post?: {
+    title: string;
+  } | null;
+  ip: string | null;
+  userAgent: string | null;
+}
+
+interface Props {
+  logs: Log[];
+}
+
+const LogsPage = ({ logs }: Props) => {
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8">
