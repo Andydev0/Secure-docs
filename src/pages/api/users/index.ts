@@ -55,8 +55,6 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
           name: true,
           email: true,
           role: true,
-          createdAt: true,
-          updatedAt: true,
         },
       });
 
