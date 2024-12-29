@@ -1,6 +1,7 @@
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import { useState } from 'react';
+import toast from 'react-hot-toast';
 
 export default function SignIn() {
   const router = useRouter();
@@ -13,21 +14,36 @@ export default function SignIn() {
     setError('');
 
     try {
+      console.log('Tentando fazer login...');
       const result = await signIn('credentials', {
         redirect: false,
         email,
         password,
       });
 
+      console.log('Resultado do login:', result);
+
       if (result?.error) {
+        console.error('Erro de login:', result.error);
         setError('Credenciais inválidas');
+        toast.error('Credenciais inválidas');
         return;
       }
 
-      // Se o login for bem-sucedido, redireciona para a página inicial
-      router.push('/');
+      console.log('Login bem-sucedido, redirecionando...');
+      toast.success('Login realizado com sucesso!');
+      
+      // Adicionar um pequeno atraso para garantir que o toast seja mostrado
+      setTimeout(() => {
+        router.push('/').catch(err => {
+          console.error('Erro ao redirecionar:', err);
+          toast.error('Erro ao redirecionar');
+        });
+      }, 500);
     } catch (error) {
+      console.error('Erro durante o login:', error);
       setError('Ocorreu um erro ao tentar fazer login');
+      toast.error('Erro ao fazer login');
     }
   };
 
