@@ -1,6 +1,6 @@
 import { NextApiRequest } from 'next';
 import prisma from '@/lib/prisma';
-import UAParser from 'ua-parser-js';
+import * as UAParserModule from 'ua-parser-js';
 
 const getClientIp = (req: NextApiRequest | any): string => {
   const forwarded = req.headers['x-forwarded-for'];
@@ -21,6 +21,10 @@ const getClientIp = (req: NextApiRequest | any): string => {
 };
 
 const formatUserAgent = (userAgent: string): string => {
+  console.log('UAParserModule:', UAParserModule);
+  console.log('userAgent:', userAgent);
+  
+  const UAParser = UAParserModule.default || UAParserModule;
   const parser = new UAParser(userAgent);
   const browser = parser.getBrowser();
   const os = parser.getOS();
