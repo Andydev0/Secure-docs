@@ -2,8 +2,6 @@ import { NextApiRequest } from 'next';
 import prisma from '@/lib/prisma';
 import UAParserModule from 'ua-parser-js';
 
-const UAParser = UAParserModule as any; // Força o TypeScript a aceitar o tipo
-
 type LogType = 'LOGIN' | 'LOGOUT' | 'VIEW_POST' | 'CREATE_POST' | 'UPDATE_POST' | 'DELETE_POST';
 
 const getClientIp = (req: NextApiRequest | any): string => {
@@ -26,61 +24,8 @@ const getClientIp = (req: NextApiRequest | any): string => {
 
 const formatUserAgent = (req: NextApiRequest | any): string => {
   try {
-    // Tentar obter user agent de várias fontes
-    const userAgent = 
-      req.headers['user-agent'] || 
-      req.headers['User-Agent'] || 
-      req.get('User-Agent') ||
-      'Unknown';
-
-    console.log('User-Agent Sources:', {
-      'headers.user-agent': req.headers['user-agent'],
-      'headers.User-Agent': req.headers['User-Agent'],
-      'req.get': req.get('User-Agent')
-    });
-
-    // Logs adicionais para depuração
-    console.log('Full Request Headers:', req.headers);
-    
-    if (userAgent === 'Unknown') {
-      console.warn('No User-Agent found in request');
-      return 'Unknown';
-    }
-
-    const parser = new UAParser(userAgent);
-    console.log('UAParser Instance:', parser);
-
-    const browser = parser.getBrowser();
-    const os = parser.getOS();
-    const device = parser.getDevice();
-
-    console.log('Browser:', browser);
-    console.log('OS:', os);
-    console.log('Device:', device);
-
-    const deviceInfo = [];
-
-    if (browser.name && browser.version) {
-      deviceInfo.push(`${browser.name} ${browser.version}`);
-    }
-
-    if (os.name && os.version) {
-      deviceInfo.push(`${os.name} ${os.version}`);
-    }
-
-    if (device.vendor || device.model) {
-      const deviceString = [device.vendor, device.model]
-        .filter(Boolean)
-        .join(' ');
-      if (deviceString) {
-        deviceInfo.push(deviceString);
-      }
-    }
-
-    const formattedInfo = deviceInfo.join(' | ');
-    console.log('Formatted Device Info:', formattedInfo);
-
-    return formattedInfo || 'Unknown';
+    const userAgent = req.headers['user-agent'] || 'Unknown';
+    return userAgent;
   } catch (error) {
     console.error('Error parsing user agent:', error);
     return 'Unknown';
@@ -94,7 +39,7 @@ export const createLog = async (
   postId?: string
 ) => {
   const ip = getClientIp(req);
-  const formattedUserAgent = formatUserAgent(req);
+  const userAgent = formatUserAgent(req);
 
   try {
     await prisma.log.create({
@@ -103,7 +48,7 @@ export const createLog = async (
         userId,
         postId,
         ip,
-        userAgent: formattedUserAgent,
+        userAgent,
       },
     });
   } catch (error) {

@@ -67,6 +67,11 @@ export const authOptions: NextAuthOptions = {
         },
       };
     },
+    async redirect({ url, baseUrl }) {
+      // Permite apenas redirecionamentos para o domínio base
+      if (url.startsWith(baseUrl)) return url;
+      return baseUrl;
+    },
   },
   pages: {
     signIn: '/auth/signin',

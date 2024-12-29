@@ -17,27 +17,13 @@ export default function SignIn() {
       console.log('Login iniciado', { email });
 
       const result = await signIn('credentials', {
-        redirect: false,
+        redirect: true,
+        callbackUrl: '/',
         email,
         password,
       });
 
       console.log('Resultado do login:', result);
-
-      if (result?.error) {
-        console.error('Erro de login:', result.error);
-        setError('Credenciais inválidas');
-        toast.error('Credenciais inválidas');
-        return;
-      }
-
-      console.log('Login bem-sucedido, preparando redirecionamento...');
-      
-      // Verificar se o redirecionamento está funcionando
-      const redirectResult = await router.push('/');
-      console.log('Redirecionamento concluído:', redirectResult);
-
-      toast.success('Login realizado com sucesso!');
     } catch (error) {
       console.error('Erro durante o login:', error);
       setError('Ocorreu um erro ao tentar fazer login');
