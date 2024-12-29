@@ -26,7 +26,7 @@ export default async function handler(
           role: true,
         },
         orderBy: {
-          createdAt: 'desc',
+          name: 'asc',
         },
       });
 

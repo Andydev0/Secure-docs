@@ -40,10 +40,10 @@ model Session {
 model User {
   id            String    @id @default(cuid())
   name          String?
-  email         String?   @unique
+  email         String    @unique
   emailVerified DateTime?
-  image         String?
   password      String?
+  image         String?
   role          String    @default("USER")
   accounts      Account[]
   sessions      Session[]
@@ -65,29 +65,20 @@ model Post {
   content   String   @db.Text
   published Boolean  @default(false)
   authorId  String
-  author    User     @relation(fields: [authorId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  author    User     @relation(fields: [authorId], references: [id])
   logs      Log[]
 }
 
 model Log {
-  id          String    @id @default(cuid())
-  type        LogType
-  userId      String
-  user        User      @relation(fields: [userId], references: [id])
-  postId      String?
-  post        Post?     @relation(fields: [postId], references: [id])
-  ip          String?
-  userAgent   String?   @db.Text
-  createdAt   DateTime  @default(now())
-}
-
-enum LogType {
-  LOGIN
-  LOGOUT
-  VIEW_POST
-  CREATE_POST
-  UPDATE_POST
-  DELETE_POST
+  id        String   @id @default(cuid())
+  type      String
+  userId    String
+  postId    String?
+  ip        String?
+  userAgent String?  @db.Text
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post?    @relation(fields: [postId], references: [id], onDelete: SetNull)
 }
