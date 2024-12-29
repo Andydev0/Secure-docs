@@ -1,6 +1,10 @@
 import { NextApiRequest } from 'next';
 import prisma from '@/lib/prisma';
-import UAParser from 'ua-parser-js';
+import UAParserModule from 'ua-parser-js';
+
+const UAParser = UAParserModule as any; // Força o TypeScript a aceitar o tipo
+
+type LogType = 'LOGIN' | 'LOGOUT' | 'VIEW_POST' | 'CREATE_POST' | 'UPDATE_POST' | 'DELETE_POST';
 
 const getClientIp = (req: NextApiRequest | any): string => {
   const forwarded = req.headers['x-forwarded-for'];
@@ -22,21 +26,23 @@ const getClientIp = (req: NextApiRequest | any): string => {
 
 const formatUserAgent = (userAgent: string): string => {
   try {
-    const parser = new UAParser(userAgent); // Corrigido para usar o operador `new`
+    const parser = new UAParser(); // Use o construtor normalmente
+    parser.setUA(userAgent); // Configura o userAgent manualmente
+
     const browser = parser.getBrowser();
     const os = parser.getOS();
     const device = parser.getDevice();
 
     const deviceInfo = [];
-    
+
     if (browser.name && browser.version) {
       deviceInfo.push(`${browser.name} ${browser.version}`);
     }
-    
+
     if (os.name && os.version) {
       deviceInfo.push(`${os.name} ${os.version}`);
     }
-    
+
     if (device.vendor || device.model) {
       const deviceString = [device.vendor, device.model]
         .filter(Boolean)
@@ -54,7 +60,7 @@ const formatUserAgent = (userAgent: string): string => {
 };
 
 export const createLog = async (
-  type: string,
+  type: LogType,
   userId: string,
   req: NextApiRequest | any,
   postId?: string
