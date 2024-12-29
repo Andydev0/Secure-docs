@@ -1,11 +1,17 @@
-import { useEffect } from 'react';
-import { useRouter } from 'next/router';
-import { useSession } from 'next-auth/react';
 import { GetServerSideProps } from 'next';
+import { getSession } from 'next-auth/react';
 import prisma from '../../lib/prisma';
-import { Post } from '@prisma/client';
+import Layout from '../../components/Layout';
+import { createLog } from '../../utils/logger';
+import { useRouter } from 'next/router';
+import { useEffect } from 'react';
 
-interface PostWithAuthor extends Post {
+interface Post {
+  id: string;
+  title: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
   author: {
     name: string;
     email: string;
@@ -13,95 +19,135 @@ interface PostWithAuthor extends Post {
 }
 
 interface Props {
-  post: PostWithAuthor;
+  post: Post;
 }
 
-export default function PostView({ post }: Props) {
+const PostPage = ({ post }: Props) => {
   const router = useRouter();
-  const { data: session } = useSession();
 
   useEffect(() => {
-    // Importar e inicializar o módulo de segurança
-    import('../../utils/security').then(({ initSecurity }) => {
-      initSecurity('.post-content');
-    });
+    // Desabilita o menu de contexto (botão direito)
+    const handleContextMenu = (e: MouseEvent) => {
+      e.preventDefault();
+    };
+
+    // Desabilita atalhos de teclado (Ctrl+C, Ctrl+P, etc)
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        switch (e.key) {
+          case 'c':
+          case 'C':
+          case 'p':
+          case 'P':
+          case 's':
+          case 'S':
+            e.preventDefault();
+            break;
+        }
+      }
+    };
+
+    // Desabilita seleção de texto
+    const handleSelect = (e: Event) => {
+      e.preventDefault();
+    };
+
+    document.addEventListener('contextmenu', handleContextMenu);
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('selectstart', handleSelect);
+
+    return () => {
+      document.removeEventListener('contextmenu', handleContextMenu);
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('selectstart', handleSelect);
+    };
   }, []);
 
-  if (!post) {
+  // Mostra um estado de carregamento enquanto o post está sendo carregado
+  if (router.isFallback) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Carregando documento...</p>
+      <Layout>
+        <div className="container mx-auto px-4 py-8">
+          <div>Carregando...</div>
         </div>
-      </div>
+      </Layout>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <article className="prose lg:prose-xl mx-auto">
-        <header className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">{post.title}</h1>
-          <div className="flex items-center text-gray-600 text-sm">
-            <span>Por {post.author.name}</span>
-            <span className="mx-2">•</span>
-            <time dateTime={post.createdAt.toString()}>
-              {new Date(post.createdAt).toLocaleDateString('pt-BR', {
-                day: '2-digit',
-                month: 'long',
-                year: 'numeric'
-              })}
-            </time>
+    <Layout>
+      <div className="container mx-auto px-4 py-8">
+        <article className="bg-white shadow-lg rounded-lg p-6">
+          <h1 className="text-3xl font-bold mb-4">{post.title}</h1>
+          <div className="text-gray-600 mb-4">
+            Por: {post.author.name || post.author.email}
           </div>
-        </header>
-
-        <div className="mt-6 text-gray-800 leading-relaxed whitespace-pre-wrap post-content">
-          {post.content}
-        </div>
-
-        <div className="mt-8 border-t pt-8">
-          <button
-            onClick={() => router.back()}
-            className="text-blue-600 hover:text-blue-800 font-medium"
+          <div 
+            className="prose max-w-none secure-content" 
+            style={{ 
+              userSelect: 'none',
+              WebkitUserSelect: 'none',
+              msUserSelect: 'none',
+              MozUserSelect: 'none'
+            }}
           >
-            ← Voltar
-          </button>
-        </div>
-      </article>
-    </div>
+            {post.content}
+          </div>
+          <div className="mt-4">
+            <button
+              onClick={() => router.back()}
+              className="text-blue-600 hover:text-blue-800"
+            >
+              ← Voltar
+            </button>
+          </div>
+        </article>
+      </div>
+    </Layout>
   );
-}
+};
 
-export const getServerSideProps: GetServerSideProps = async ({ params }) => {
-  try {
-    const post = await prisma.post.findUnique({
-      where: { id: String(params?.id) },
-      include: {
-        author: {
-          select: {
-            name: true,
-            email: true,
-          },
-        },
-      },
-    });
+export const getServerSideProps: GetServerSideProps = async ({ params, req }) => {
+  const session = await getSession({ req });
 
-    if (!post) {
-      return {
-        notFound: true,
-      };
-    }
-
+  if (!session) {
     return {
-      props: {
-        post: JSON.parse(JSON.stringify(post)),
+      redirect: {
+        destination: '/auth/signin',
+        permanent: false,
       },
     };
-  } catch (error) {
-    console.error('Error fetching post:', error);
+  }
+
+  const post = await prisma.post.findUnique({
+    where: {
+      id: String(params?.id),
+    },
+    include: {
+      author: {
+        select: { name: true, email: true },
+      },
+    },
+  });
+
+  if (!post) {
     return {
       notFound: true,
     };
   }
+
+  // Registrar log de visualização
+  await createLog('VIEW_POST', session.user.id, req, post.id);
+
+  return {
+    props: {
+      post: {
+        ...post,
+        createdAt: post.createdAt.toISOString(),
+        updatedAt: post.updatedAt.toISOString(),
+      },
+    },
+  };
 };
+
+export default PostPage;

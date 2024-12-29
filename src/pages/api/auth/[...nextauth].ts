@@ -1,18 +1,19 @@
 import { NextAuthOptions } from 'next-auth';
 import NextAuth from 'next-auth/next';
 import CredentialsProvider from 'next-auth/providers/credentials';
+import { compare } from 'bcrypt';
 import prisma from '../../../lib/prisma';
-import bcrypt from 'bcrypt';
+import { createLog } from '../../../utils/logger';
 
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
-      name: 'Credentials',
+      name: 'credentials',
       credentials: {
         email: { label: 'Email', type: 'email' },
-        password: { label: 'Password', type: 'password' }
+        password: { label: 'Password', type: 'password' },
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         if (!credentials?.email || !credentials?.password) {
           throw new Error('Email e senha são obrigatórios');
         }
@@ -23,18 +24,18 @@ export const authOptions: NextAuthOptions = {
           },
         });
 
-        if (!user) {
-          throw new Error('Usuário não encontrado');
+        if (!user || !user.password) {
+          throw new Error('Email não encontrado');
         }
 
-        const isPasswordValid = await bcrypt.compare(
-          credentials.password,
-          user.password
-        );
+        const isPasswordValid = await compare(credentials.password, user.password);
 
         if (!isPasswordValid) {
           throw new Error('Senha incorreta');
         }
+
+        // Registrar log de login
+        await createLog('LOGIN', user.id, req);
 
         return {
           id: user.id,
@@ -48,17 +49,23 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.role = user.role;
-        token.id = user.id;
+        return {
+          ...token,
+          role: user.role,
+          id: user.id,
+        };
       }
       return token;
     },
     async session({ session, token }) {
-      if (session.user) {
-        session.user.role = token.role as string;
-        session.user.id = token.id as string;
-      }
-      return session;
+      return {
+        ...session,
+        user: {
+          ...session.user,
+          role: token.role,
+          id: token.id,
+        },
+      };
     },
   },
   pages: {
