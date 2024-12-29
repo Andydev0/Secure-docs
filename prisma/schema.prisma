@@ -86,7 +86,6 @@ model Log {
   userId    String
   postId    String?
   ip        String?
-  userAgent String?  @db.Text
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   post      Post?    @relation(fields: [postId], references: [id], onDelete: SetNull)

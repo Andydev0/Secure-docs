@@ -1,6 +1,5 @@
 import { NextApiRequest } from 'next';
 import prisma from '@/lib/prisma';
-import UAParserModule from 'ua-parser-js';
 
 type LogType = 'LOGIN' | 'LOGOUT' | 'VIEW_POST' | 'CREATE_POST' | 'UPDATE_POST' | 'DELETE_POST';
 
@@ -22,16 +21,6 @@ const getClientIp = (req: NextApiRequest | any): string => {
          '0.0.0.0';
 };
 
-const formatUserAgent = (req: NextApiRequest | any): string => {
-  try {
-    const userAgent = req.headers['user-agent'] || 'Unknown';
-    return userAgent;
-  } catch (error) {
-    console.error('Error parsing user agent:', error);
-    return 'Unknown';
-  }
-};
-
 export const createLog = async (
   type: LogType,
   userId: string,
@@ -39,7 +28,6 @@ export const createLog = async (
   postId?: string
 ) => {
   const ip = getClientIp(req);
-  const userAgent = formatUserAgent(req);
 
   try {
     await prisma.log.create({
@@ -48,7 +36,6 @@ export const createLog = async (
         userId,
         postId,
         ip,
-        userAgent,
       },
     });
   } catch (error) {
