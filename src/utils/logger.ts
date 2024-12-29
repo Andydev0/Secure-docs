@@ -1,6 +1,6 @@
 import { NextApiRequest } from 'next';
 import prisma from '@/lib/prisma';
-import * as UAParserModule from 'ua-parser-js';
+import UAParser from 'ua-parser-js';
 
 const getClientIp = (req: NextApiRequest | any): string => {
   const forwarded = req.headers['x-forwarded-for'];
@@ -21,35 +21,36 @@ const getClientIp = (req: NextApiRequest | any): string => {
 };
 
 const formatUserAgent = (userAgent: string): string => {
-  console.log('UAParserModule:', UAParserModule);
-  console.log('userAgent:', userAgent);
-  
-  const UAParser = UAParserModule.default || UAParserModule;
-  const parser = new UAParser(userAgent);
-  const browser = parser.getBrowser();
-  const os = parser.getOS();
-  const device = parser.getDevice();
+  try {
+    const parser = UAParser(userAgent);
+    const browser = parser.getBrowser();
+    const os = parser.getOS();
+    const device = parser.getDevice();
 
-  const deviceInfo = [];
-  
-  if (browser.name && browser.version) {
-    deviceInfo.push(`${browser.name} ${browser.version}`);
-  }
-  
-  if (os.name && os.version) {
-    deviceInfo.push(`${os.name} ${os.version}`);
-  }
-  
-  if (device.vendor || device.model) {
-    const deviceString = [device.vendor, device.model]
-      .filter(Boolean)
-      .join(' ');
-    if (deviceString) {
-      deviceInfo.push(deviceString);
+    const deviceInfo = [];
+    
+    if (browser.name && browser.version) {
+      deviceInfo.push(`${browser.name} ${browser.version}`);
     }
-  }
+    
+    if (os.name && os.version) {
+      deviceInfo.push(`${os.name} ${os.version}`);
+    }
+    
+    if (device.vendor || device.model) {
+      const deviceString = [device.vendor, device.model]
+        .filter(Boolean)
+        .join(' ');
+      if (deviceString) {
+        deviceInfo.push(deviceString);
+      }
+    }
 
-  return deviceInfo.join(' | ');
+    return deviceInfo.join(' | ');
+  } catch (error) {
+    console.error('Error parsing user agent:', error);
+    return 'Unknown';
+  }
 };
 
 export const createLog = async (
