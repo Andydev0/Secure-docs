@@ -71,9 +71,18 @@ model Post {
   logs      Log[]
 }
 
+enum LogType {
+  LOGIN
+  LOGOUT
+  VIEW_POST
+  CREATE_POST
+  UPDATE_POST
+  DELETE_POST
+}
+
 model Log {
   id        String   @id @default(cuid())
-  type      String
+  type      LogType
   userId    String
   postId    String?
   ip        String?
