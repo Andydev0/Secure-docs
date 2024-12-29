@@ -31,7 +31,6 @@ interface Log {
     title: string;
   } | null;
   ip: string | null;
-  userAgent: string | null;
   createdAt: string;
 }
 
@@ -67,7 +66,6 @@ export const getServerSideProps: GetServerSideProps = async ({ req }) => {
         },
       },
       ip: true,
-      userAgent: true,
       createdAt: true,
     },
     orderBy: {
@@ -96,13 +94,10 @@ const LogsPage = ({ logs }: Props) => {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Data/Hora
+                    Tipo
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Usuário
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Ação
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Documento
@@ -111,31 +106,18 @@ const LogsPage = ({ logs }: Props) => {
                     IP
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Dispositivo
+                    Data
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {logs.map((log) => (
-                  <tr key={log.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {format(new Date(log.createdAt), "dd/MM/yyyy 'às' HH:mm", {
-                        locale: ptBR,
-                      })}
+                  <tr key={log.id}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {logTypes[log.type]}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {log.user.name || log.user.email}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <span
-                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          log.type.includes('POST')
-                            ? 'bg-blue-100 text-blue-800'
-                            : 'bg-green-100 text-green-800'
-                        }`}
-                      >
-                        {getLogTypeDisplay(log.type)}
-                      </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {log.post?.title || '-'}
@@ -144,7 +126,7 @@ const LogsPage = ({ logs }: Props) => {
                       {log.ip || '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {log.userAgent || '-'}
+                      {format(new Date(log.createdAt), 'dd/MM/yyyy HH:mm:ss')}
                     </td>
                   </tr>
                 ))}
