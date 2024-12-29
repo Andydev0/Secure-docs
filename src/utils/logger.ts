@@ -26,12 +26,18 @@ const getClientIp = (req: NextApiRequest | any): string => {
 
 const formatUserAgent = (userAgent: string): string => {
   try {
-    const parser = new UAParser(); // Use o construtor normalmente
-    parser.setUA(userAgent); // Configura o userAgent manualmente
+    console.log('User-Agent Original:', userAgent);
+    
+    const parser = new UAParser(userAgent);
+    console.log('UAParser Instance:', parser);
 
     const browser = parser.getBrowser();
     const os = parser.getOS();
     const device = parser.getDevice();
+
+    console.log('Browser:', browser);
+    console.log('OS:', os);
+    console.log('Device:', device);
 
     const deviceInfo = [];
 
@@ -52,7 +58,10 @@ const formatUserAgent = (userAgent: string): string => {
       }
     }
 
-    return deviceInfo.join(' | ');
+    const formattedInfo = deviceInfo.join(' | ');
+    console.log('Formatted Device Info:', formattedInfo);
+
+    return formattedInfo || 'Unknown';
   } catch (error) {
     console.error('Error parsing user agent:', error);
     return 'Unknown';
