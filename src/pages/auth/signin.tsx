@@ -14,7 +14,8 @@ export default function SignIn() {
     setError('');
 
     try {
-      console.log('Tentando fazer login...');
+      console.log('Login iniciado', { email });
+
       const result = await signIn('credentials', {
         redirect: false,
         email,
@@ -30,16 +31,13 @@ export default function SignIn() {
         return;
       }
 
-      console.log('Login bem-sucedido, redirecionando...');
-      toast.success('Login realizado com sucesso!');
+      console.log('Login bem-sucedido, preparando redirecionamento...');
       
-      // Adicionar um pequeno atraso para garantir que o toast seja mostrado
-      setTimeout(() => {
-        router.push('/').catch(err => {
-          console.error('Erro ao redirecionar:', err);
-          toast.error('Erro ao redirecionar');
-        });
-      }, 500);
+      // Verificar se o redirecionamento está funcionando
+      const redirectResult = await router.push('/');
+      console.log('Redirecionamento concluído:', redirectResult);
+
+      toast.success('Login realizado com sucesso!');
     } catch (error) {
       console.error('Erro durante o login:', error);
       setError('Ocorreu um erro ao tentar fazer login');

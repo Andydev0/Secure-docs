@@ -24,10 +24,29 @@ const getClientIp = (req: NextApiRequest | any): string => {
          '0.0.0.0';
 };
 
-const formatUserAgent = (userAgent: string): string => {
+const formatUserAgent = (req: NextApiRequest | any): string => {
   try {
-    console.log('User-Agent Original:', userAgent);
+    // Tentar obter user agent de várias fontes
+    const userAgent = 
+      req.headers['user-agent'] || 
+      req.headers['User-Agent'] || 
+      req.get('User-Agent') ||
+      'Unknown';
+
+    console.log('User-Agent Sources:', {
+      'headers.user-agent': req.headers['user-agent'],
+      'headers.User-Agent': req.headers['User-Agent'],
+      'req.get': req.get('User-Agent')
+    });
+
+    // Logs adicionais para depuração
+    console.log('Full Request Headers:', req.headers);
     
+    if (userAgent === 'Unknown') {
+      console.warn('No User-Agent found in request');
+      return 'Unknown';
+    }
+
     const parser = new UAParser(userAgent);
     console.log('UAParser Instance:', parser);
 
@@ -75,8 +94,7 @@ export const createLog = async (
   postId?: string
 ) => {
   const ip = getClientIp(req);
-  const userAgent = req.headers['user-agent'];
-  const formattedUserAgent = userAgent ? formatUserAgent(userAgent) : 'Unknown';
+  const formattedUserAgent = formatUserAgent(req);
 
   try {
     await prisma.log.create({
