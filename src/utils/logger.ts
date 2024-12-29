@@ -22,7 +22,7 @@ const getClientIp = (req: NextApiRequest | any): string => {
 
 const formatUserAgent = (userAgent: string): string => {
   try {
-    const parser = UAParser(userAgent);
+    const parser = new UAParser(userAgent); // Corrigido para usar o operador `new`
     const browser = parser.getBrowser();
     const os = parser.getOS();
     const device = parser.getDevice();
