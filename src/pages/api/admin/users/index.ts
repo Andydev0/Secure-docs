@@ -17,17 +17,24 @@ export default async function handler(
   }
 
   if (req.method === 'GET') {
-    const users = await prisma.user.findMany({
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        createdAt: true,
-      },
-    });
+    try {
+      const users = await prisma.user.findMany({
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
 
-    return res.json(users);
+      return res.json(users);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      return res.status(500).json({ error: 'Erro ao buscar usuários' });
+    }
   }
 
   if (req.method === 'POST') {
